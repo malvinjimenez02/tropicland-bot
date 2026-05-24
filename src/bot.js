@@ -1,6 +1,6 @@
 const { callOpenAI } = require('./openai');
 const { executeTool, getPedidoRef } = require('./tools');
-const { sendTextMessage } = require('./meta');
+const { sendTextMessage } = require('./whatsapp');
 const { isBotPausado, actualizarConversacion } = require('./sheets');
 
 // Historial en memoria por número de WhatsApp (se pierde al reiniciar)

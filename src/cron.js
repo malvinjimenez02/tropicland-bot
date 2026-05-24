@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { getSeguimientosPendientes, marcarSeguimientoEnviado, isBotPausado, registrarLog, programarSeguimiento, pausarBot } = require('./sheets');
-const { sendTextMessage } = require('./meta');
+const { sendTextMessage } = require('./whatsapp');
 const { callOpenAI } = require('./openai');
 const { executeTool } = require('./tools');
 

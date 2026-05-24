@@ -1,5 +1,5 @@
 const sheets = require('./sheets');
-const { sendTextMessage } = require('./meta');
+const { sendTextMessage } = require('./whatsapp');
 
 const storeName = process.env.STORE_NAME || 'la tienda';
 const ownerNumber = process.env.OWNER_WHATSAPP_NUMBER;
