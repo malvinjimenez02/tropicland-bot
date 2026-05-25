@@ -4,14 +4,13 @@ const {
   DisconnectReason,
   fetchLatestBaileysVersion,
   isJidBroadcast,
-  makeInMemoryStore,
 } = require('@whiskeysockets/baileys');
-const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 const path = require('path');
 
 let sock = null;
 let messageHandler = null;
+let currentQR = null;
 
 // Convierte número de teléfono a JID de WhatsApp
 function toJid(numero) {
@@ -50,8 +49,8 @@ async function connectToWhatsApp(onMessage) {
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log('\n[Baileys] Escanea este código QR con tu WhatsApp:\n');
-      qrcode.generate(qr, { small: true });
+      currentQR = qr;
+      console.log('[Baileys] Nuevo QR generado. Ábrelo en: /qr');
     }
 
     if (connection === 'close') {
@@ -68,6 +67,7 @@ async function connectToWhatsApp(onMessage) {
         console.error('[Baileys] Sesión cerrada (logout). Elimina la carpeta auth_state y reinicia.');
       }
     } else if (connection === 'open') {
+      currentQR = null;
       console.log('[Baileys] ✅ Conectado a WhatsApp exitosamente');
     }
   });
@@ -152,4 +152,8 @@ function getSocket() {
   return sock;
 }
 
-module.exports = { connectToWhatsApp, sendTextMessage, toJid, fromJid, getSocket };
+function getCurrentQR() {
+  return currentQR;
+}
+
+module.exports = { connectToWhatsApp, sendTextMessage, toJid, fromJid, getSocket, getCurrentQR };
