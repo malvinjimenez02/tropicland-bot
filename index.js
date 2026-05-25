@@ -4,11 +4,22 @@ const QRCode = require('qrcode');
 const { connectToWhatsApp, getCurrentQR } = require('./src/whatsapp');
 const { processIncomingMessage } = require('./src/bot');
 const { startCronJobs, procesarSeguimientos, enviarResumenDiario } = require('./src/cron');
+const { setupSheets } = require('./src/sheets');
 
 const app = express();
 app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+app.get('/setup', async (req, res) => {
+  try {
+    const result = await setupSheets();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[Setup] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/qr', async (req, res) => {
   const qr = getCurrentQR();

@@ -18,6 +18,14 @@ const COL = {
   SEGUIMIENTOS: { TELEFONO: 0, NOMBRE: 1, PEDIDO: 2, INTENTO: 3, ENVIAR_AT: 4, ENVIADO: 5, RESULTADO: 6 },
 };
 
+const HEADERS = {
+  Pedidos: ['#Pedido', 'Nombre', 'Teléfono/WA', 'Producto', 'Monto', 'Ciudad', 'Dirección', 'Estado', 'Intentos Bot', 'Último Contacto', 'Notas'],
+  Conversaciones: ['Teléfono/WA', 'Nombre', '#Pedido Ref.', 'Estado Bot', 'Intentos', 'Último Msg Enviado', 'Último Msg Recibido', 'Fecha Inicio'],
+  'Log Diario': ['Fecha y Hora', 'Nombre', 'Teléfono/WA', 'Acción', 'Detalle', 'Estado Resultante'],
+  Seguimientos: ['Teléfono/WA', 'Nombre', '#Pedido', 'Intento #', 'Enviar A Las', '¿Enviado?', 'Resultado'],
+  Dashboard: ['Dashboard'],
+};
+
 let sheetsClient = null;
 
 async function getSheetsClient() {
@@ -252,7 +260,39 @@ async function getPedidosDelDia(fecha) {
   return rows.slice(1).filter(row => row[COL.PEDIDOS.ULTIMO_CONTACTO] && row[COL.PEDIDOS.ULTIMO_CONTACTO].startsWith(fecha));
 }
 
+async function setupSheets() {
+  const sheets = await getSheetsClient();
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const existing = meta.data.sheets.map(s => s.properties.title);
+  const required = Object.keys(HEADERS);
+
+  const missing = required.filter(name => !existing.includes(name));
+  const requests = missing.map(title => ({ addSheet: { properties: { title } } }));
+
+  if (requests.length > 0) {
+    await sheets.spreadsheets.batchUpdate({ spreadsheetId: SHEET_ID, resource: { requests } });
+    console.log('[Setup] Pestañas creadas:', missing.join(', '));
+  } else {
+    console.log('[Setup] Todas las pestañas ya existen.');
+  }
+
+  for (const [name, headers] of Object.entries(HEADERS)) {
+    if (name === 'Dashboard') continue;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `${name}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [headers] },
+    });
+  }
+
+  console.log('[Setup] Headers escritos en todas las hojas.');
+  return { created: missing, existing: existing.filter(n => required.includes(n)) };
+}
+
 module.exports = {
+  setupSheets,
   crearPedido,
   buscarPedidoPorTelefono,
   actualizarEstadoPedido,
