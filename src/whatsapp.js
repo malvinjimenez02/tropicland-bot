@@ -88,6 +88,7 @@ async function connectToWhatsApp(onMessage) {
       const content = extractContent(msg);
       if (!content) continue;
 
+      console.log(`[Baileys] JID crudo: ${jid} | Número extraído: ${numero} | fromMe: ${msg.key.fromMe} | participant: ${msg.key.participant || 'N/A'}`);
       console.log(`[Baileys] Mensaje de ${numero}: ${JSON.stringify(content)}`);
 
       if (messageHandler) {
