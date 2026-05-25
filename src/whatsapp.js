@@ -82,13 +82,14 @@ async function connectToWhatsApp(onMessage) {
       if (msg.key.remoteJid.endsWith('@g.us')) continue;
 
       const jid = msg.key.remoteJid;
-      const numero = fromJid(jid);
+      // Para JIDs @lid (multi-device), usar el JID completo como identificador
+      // toJid() ya lo maneja correctamente al enviar de vuelta
+      const numero = jid.endsWith('@lid') ? jid : fromJid(jid);
 
       // Extraer contenido del mensaje
       const content = extractContent(msg);
       if (!content) continue;
 
-      console.log(`[Baileys] JID crudo: ${jid} | Número extraído: ${numero} | fromMe: ${msg.key.fromMe} | participant: ${msg.key.participant || 'N/A'}`);
       console.log(`[Baileys] Mensaje de ${numero}: ${JSON.stringify(content)}`);
 
       if (messageHandler) {
