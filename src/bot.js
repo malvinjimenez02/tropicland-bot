@@ -61,7 +61,7 @@ async function processIncomingMessage(numero_whatsapp, content) {
         }
 
         // Inyectar numero_whatsapp en args si el tool lo requiere
-        if (args.numero_whatsapp === undefined) {
+        if (!args.numero_whatsapp) {
           args.numero_whatsapp = numero_whatsapp;
         }
 
