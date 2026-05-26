@@ -8,6 +8,7 @@ const SHEETS = {
   CONVERSACIONES: 'Conversaciones',
   LOG: 'Log Diario',
   SEGUIMIENTOS: 'Seguimientos',
+  CONFIG: 'Config',
 };
 
 // Columnas de cada hoja (índice base 0)
@@ -24,6 +25,7 @@ const HEADERS = {
   'Log Diario': ['Fecha y Hora', 'Nombre', 'Teléfono/WA', 'Acción', 'Detalle', 'Estado Resultante'],
   Seguimientos: ['Teléfono/WA', 'Nombre', '#Pedido', 'Intento #', 'Enviar A Las', '¿Enviado?', 'Resultado'],
   Dashboard: ['Dashboard'],
+  Config: ['Clave', 'Valor'],
 };
 
 let sheetsClient = null;
@@ -179,6 +181,24 @@ async function pausarBot(numero_whatsapp) {
   await actualizarConversacion(numero_whatsapp, { estado_bot: 'pausado' });
 }
 
+async function activarBot(numero_whatsapp) {
+  await actualizarConversacion(numero_whatsapp, { estado_bot: 'activo' });
+}
+
+async function getAllConversaciones() {
+  const rows = await readSheet(SHEETS.CONVERSACIONES, 'A:H');
+  return rows.slice(1).map(row => ({
+    telefono: row[COL.CONVERSACIONES.TELEFONO] || '',
+    nombre: row[COL.CONVERSACIONES.NOMBRE] || '',
+    pedido_ref: row[COL.CONVERSACIONES.PEDIDO_REF] || '',
+    estado_bot: row[COL.CONVERSACIONES.ESTADO_BOT] || 'activo',
+    intentos: row[COL.CONVERSACIONES.INTENTOS] || '0',
+    ultimo_enviado: row[COL.CONVERSACIONES.ULTIMO_ENV] || '',
+    ultimo_recibido: row[COL.CONVERSACIONES.ULTIMO_REC] || '',
+    fecha_inicio: row[COL.CONVERSACIONES.FECHA_INICIO] || '',
+  })).filter(c => c.telefono);
+}
+
 // --- LOG DIARIO ---
 
 async function registrarLog({ numero_whatsapp, nombre_cliente, accion, detalle, estado_resultante = '' }) {
@@ -260,6 +280,19 @@ async function getPedidosDelDia(fecha) {
   return rows.slice(1).filter(row => row[COL.PEDIDOS.ULTIMO_CONTACTO] && row[COL.PEDIDOS.ULTIMO_CONTACTO].startsWith(fecha));
 }
 
+async function getLogPorTelefono(telefono) {
+  const rows = await readSheet(SHEETS.LOG, 'A:F');
+  return rows.slice(1)
+    .filter(row => row[COL.LOG.TELEFONO] === telefono)
+    .map(row => ({
+      fecha: row[COL.LOG.FECHA_HORA] || '',
+      nombre: row[COL.LOG.NOMBRE] || '',
+      accion: row[COL.LOG.ACCION] || '',
+      detalle: row[COL.LOG.DETALLE] || '',
+      estado: row[COL.LOG.ESTADO] || '',
+    }));
+}
+
 async function setupSheets() {
   const sheets = await getSheetsClient();
 
@@ -292,15 +325,19 @@ async function setupSheets() {
 }
 
 module.exports = {
+  getSheetsClient,
   setupSheets,
+  getLogPorTelefono,
   crearPedido,
   buscarPedidoPorTelefono,
   actualizarEstadoPedido,
   crearConversacion,
   buscarConversacion,
   actualizarConversacion,
+  getAllConversaciones,
   isBotPausado,
   pausarBot,
+  activarBot,
   registrarLog,
   programarSeguimiento,
   cancelarSeguimientos,

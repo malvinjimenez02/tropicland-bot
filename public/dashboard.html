@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TropiclandBot — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-bubble { animation: fadeInUp 0.15s ease-out; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .blink { animation: blink 2s ease-in-out infinite; }
+
+    body { font-family: 'Poppins', sans-serif; }
+
+    #sidebar { transition: width 0.22s cubic-bezier(.4,0,.2,1); overflow: hidden; }
+    #mainContent { transition: margin-left 0.22s cubic-bezier(.4,0,.2,1); }
+    #sidebar.collapsed { width: 56px !important; }
+    #sidebar.collapsed .sidebar-label { display: none; }
+    #sidebar.collapsed .sidebar-logo { justify-content: center; padding-left: 0; padding-right: 0; }
+    #sidebar.collapsed .sidebar-section-label { display: none; }
+    #sidebar.collapsed .sidebar-nav { padding-left: 0.375rem; padding-right: 0.375rem; }
+    #sidebar.collapsed .nav-btn { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+    #sidebar.collapsed .sidebar-user { justify-content: center; }
+    #sidebar.collapsed .sidebar-bottom { padding-left: 0; padding-right: 0; align-items: center; }
+    #sidebar.collapsed #convBadge { display: none !important; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+
+  <!-- ══════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════ -->
+  <aside id="sidebar" class="w-[240px] bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0 z-30">
+
+    <!-- Logo -->
+    <div class="px-4 pt-[18px] pb-[14px] border-b border-gray-100">
+      <div class="sidebar-logo flex items-center gap-2.5">
+        <!-- Dark logo mark -->
+        <div class="w-8 h-8 bg-[#111827] rounded-[8px] flex items-center justify-center flex-shrink-0">
+          <!-- Robot / bot face -->
+          <svg class="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="9" width="14" height="10" rx="2"/>
+            <circle cx="9" cy="13.5" r="1.2" fill="white" stroke="none"/>
+            <circle cx="15" cy="13.5" r="1.2" fill="white" stroke="none"/>
+            <path d="M12 9V6"/>
+            <circle cx="12" cy="5" r="1" fill="white" stroke="none"/>
+          </svg>
+        </div>
+        <div class="sidebar-label">
+          <p class="text-[14px] font-bold text-gray-900 leading-[1.2]">TropiclandBot</p>
+          <p class="text-[11px] font-medium text-emerald-500 leading-[1.4] mt-[1px]">Panel admin</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="sidebar-nav flex-1 px-3 pt-5 pb-2 overflow-y-auto">
+      <p class="sidebar-section-label text-[10px] font-semibold text-gray-400 uppercase tracking-[0.1em] px-2 mb-[10px]">Workspace</p>
+      <nav class="space-y-[2px]">
+
+        <!-- Configuración -->
+        <button id="nav-config" onclick="switchTab('config')"
+          class="nav-btn w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[10px] text-[13px] font-semibold bg-[#111827] text-white transition-all">
+          <!-- Bot / robot icon -->
+          <svg class="w-[15px] h-[15px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="9" width="14" height="10" rx="2"/>
+            <circle cx="9" cy="14" r="1.2" fill="white" stroke="none"/>
+            <circle cx="15" cy="14" r="1.2" fill="white" stroke="none"/>
+            <path d="M12 9V6.5"/>
+            <circle cx="12" cy="5.5" r="1" fill="white" stroke="none"/>
+          </svg>
+          <span class="sidebar-label">Configuración</span>
+        </button>
+
+        <!-- Conversaciones -->
+        <button id="nav-conv" onclick="switchTab('conv')"
+          class="nav-btn w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[10px] text-[13px] font-medium text-emerald-600 hover:bg-gray-50 transition-all">
+          <!-- Chat bubble -->
+          <svg class="w-[15px] h-[15px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          <span class="sidebar-label">Conversaciones</span>
+          <span id="convBadge" class="hidden ml-auto bg-emerald-100 text-emerald-700 text-[11px] font-bold min-w-[20px] h-[20px] flex items-center justify-center rounded-full px-1.5 leading-none">0</span>
+        </button>
+
+      </nav>
+    </div>
+
+    <!-- Bottom: user + logout -->
+    <div class="sidebar-bottom border-t border-gray-100 px-4 pt-3 pb-4 space-y-[10px]">
+
+      <!-- User info -->
+      <div class="sidebar-user flex items-center gap-[10px]">
+        <div class="w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 select-none tracking-wide">AD</div>
+        <div class="sidebar-label min-w-0">
+          <p class="text-[13px] font-semibold text-gray-900 leading-[1.2]">Admin</p>
+          <p class="text-[11px] font-medium text-emerald-500 leading-[1.4] truncate">Tropicland · DO</p>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <button id="logoutBtn"
+        class="flex items-center justify-center gap-[7px] text-[12px] font-medium text-gray-400 hover:text-gray-700 transition-colors w-full">
+        <svg class="w-[14px] h-[14px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span class="sidebar-label">Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════════
+       MAIN CONTENT (offset by sidebar width)
+  ══════════════════════════════════════════════ -->
+  <main id="mainContent" class="ml-[240px] flex-1 min-h-screen flex flex-col">
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+      <div id="toastMsg" class="px-4 py-3 rounded-xl shadow-xl text-sm text-white font-medium min-w-48"></div>
+    </div>
+
+    <!-- ── Sticky page header ── -->
+    <div class="sticky top-0 z-20 bg-white border-b border-gray-100 px-5 h-[52px] flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <!-- Panel toggle -->
+        <button id="sidebarToggle" onclick="toggleSidebar()" class="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+          <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 3v18"/>
+          </svg>
+        </button>
+        <div class="flex items-baseline gap-[7px]">
+          <h1 id="pageTitle" class="text-[15px] font-bold text-gray-900">Configuración del Bot</h1>
+          <span id="pageSubtitle" class="text-[13px] text-gray-400 font-normal">· Prompt, datos y FAQs</span>
+        </div>
+      </div>
+      <!-- WA / bot status — JS replaces innerHTML+className -->
+      <div id="waStatus" class="flex items-center gap-[6px] text-[12px] font-semibold text-emerald-600 border border-emerald-200 bg-emerald-50 px-3 py-[5px] rounded-full">
+        <span class="w-[7px] h-[7px] rounded-full bg-emerald-500 blink flex-shrink-0"></span>
+        Bot operando · v2.4
+      </div>
+    </div>
+
+    <!-- ═══ PANEL: CONFIGURACIÓN ═══ -->
+    <div id="panel-config" class="flex-1 max-w-4xl w-full mx-auto px-6 py-7 space-y-5">
+
+      <!-- System Prompt -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div class="flex items-start justify-between px-6 pt-5 pb-4">
+          <div class="flex items-start gap-3">
+            <!-- >_ terminal icon -->
+            <svg class="w-5 h-5 text-emerald-500 mt-[2px] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 17 10 11 4 5"/>
+              <line x1="12" y1="19" x2="20" y2="19"/>
+            </svg>
+            <div>
+              <h2 class="text-[15px] font-bold text-gray-900 leading-tight">System Prompt</h2>
+              <p class="text-[12px] text-gray-400 mt-[3px] leading-snug">Instrucciones base que definen el tono, la personalidad y los límites del bot.</p>
+            </div>
+          </div>
+          <button onclick="savePrompt()"
+            class="inline-flex items-center gap-[7px] bg-[#111827] hover:bg-gray-800 text-white text-[13px] font-semibold px-4 py-[7px] rounded-lg transition-colors flex-shrink-0 ml-4">
+            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Guardar
+          </button>
+        </div>
+        <div class="px-6 pb-6">
+          <textarea id="systemPrompt" rows="16"
+            class="w-full text-[13px] font-mono bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent focus:bg-white resize-y leading-relaxed transition-colors"
+            placeholder="Cargando..."></textarea>
+        </div>
+      </div>
+
+      <!-- Datos del Negocio -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div class="flex items-start justify-between px-6 pt-5 pb-5">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-[1px]">
+              <svg class="w-[17px] h-[17px] text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-[15px] font-bold text-gray-900 leading-tight">Datos del negocio</h2>
+              <p class="text-[12px] text-emerald-600 mt-[3px] leading-snug">Información que el bot usa para responder sobre tienda, entregas y cobertura.</p>
+            </div>
+          </div>
+          <button onclick="saveBusiness()"
+            class="inline-flex items-center gap-[7px] bg-[#111827] hover:bg-gray-800 text-white text-[13px] font-semibold px-4 py-[7px] rounded-lg transition-colors flex-shrink-0 ml-4">
+            <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Guardar
+          </button>
+        </div>
+        <div class="px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 mb-1.5">Nombre de la tienda</label>
+            <input id="storeName" type="text"
+              class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-gray-300" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 mb-1.5">Entrega Santo Domingo (SDQ)</label>
+            <input id="deliverySdq" type="text"
+              class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-gray-300" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 mb-1.5">Entrega Santiago (STI)</label>
+            <input id="deliverySti" type="text"
+              class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-gray-300" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 mb-1.5">Entrega Interior</label>
+            <input id="deliveryInterior" type="text"
+              class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-gray-300" />
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQs -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div class="flex items-start justify-between px-6 pt-5 pb-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-[1px]">
+              <svg class="w-[17px] h-[17px] text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-[15px] font-bold text-gray-900 leading-tight">Preguntas frecuentes</h2>
+              <p class="text-[12px] text-emerald-600 mt-[3px] leading-snug">El bot las usará como referencia para responder con consistencia.</p>
+            </div>
+          </div>
+          <button onclick="showAddFaq()"
+            class="inline-flex items-center gap-[6px] border border-gray-200 hover:border-emerald-400 hover:text-emerald-600 text-gray-600 bg-white text-[13px] font-medium px-4 py-[7px] rounded-lg transition-colors flex-shrink-0 ml-4">
+            <svg class="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nueva FAQ
+          </button>
+        </div>
+
+          <!-- Add FAQ form -->
+          <div id="addFaqForm" class="hidden mx-6 mb-4 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+            <div class="mb-3">
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">Pregunta del cliente</label>
+              <input id="faqPregunta" type="text" placeholder="Ej: ¿Aceptan tarjeta?"
+                class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">Respuesta del bot</label>
+              <textarea id="faqRespuesta" rows="2" placeholder="Ej: No, solo aceptamos efectivo al momento de la entrega"
+                class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="saveFaq()"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">Guardar FAQ</button>
+              <button onclick="hideAddFaq()"
+                class="text-xs font-medium text-gray-500 hover:text-gray-700 bg-white border border-gray-200 px-4 py-2 rounded-lg transition-colors">Cancelar</button>
+            </div>
+          </div>
+
+          <div id="faqList" class="px-6 pb-6 space-y-2">
+            <p class="text-sm text-gray-400 text-center py-4">Cargando FAQs...</p>
+          </div>
+      </div>
+    </div><!-- /panel-config -->
+
+    <!-- ═══ PANEL: CONVERSACIONES ═══ -->
+    <div id="panel-conv" class="hidden flex-1" style="height:100vh;">
+      <div class="flex h-full px-4 py-4 gap-3">
+
+        <!-- Left: list -->
+        <div class="w-80 flex-shrink-0 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden shadow-sm">
+          <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <h2 class="text-sm font-semibold text-gray-900">Conversaciones</h2>
+            <button onclick="loadConversaciones()"
+              class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Refrescar
+            </button>
+          </div>
+          <div id="convList" class="flex-1 overflow-y-auto divide-y divide-gray-50">
+            <p class="text-sm text-gray-400 text-center py-8 px-4">Cargando...</p>
+          </div>
+        </div>
+
+        <!-- Right: chat -->
+        <div class="flex-1 bg-white rounded-2xl border border-gray-200 flex flex-col overflow-hidden min-w-0 shadow-sm">
+
+          <!-- Chat header -->
+          <div id="chatHeader" class="hidden px-5 py-3.5 border-b border-gray-100 bg-white flex-shrink-0">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div id="chatAvatar"
+                  class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm select-none">
+                  ?
+                </div>
+                <div>
+                  <p id="chatName" class="text-sm font-semibold text-gray-900"></p>
+                  <p id="chatPhone" class="text-xs text-gray-400 font-mono mt-0.5"></p>
+                </div>
+              </div>
+              <div id="chatBotActions" class="flex gap-2"></div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div id="chatEmpty" class="flex-1 flex flex-col items-center justify-center gap-3 select-none">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+              <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-400">Selecciona una conversación</p>
+            <p class="text-xs text-gray-300">para leer y responder mensajes</p>
+          </div>
+
+          <!-- Messages -->
+          <div id="chatMessages" class="hidden flex-1 overflow-y-auto p-4 space-y-3" style="background:#f0f2f5"></div>
+
+          <!-- Input -->
+          <div id="chatInputArea" class="hidden px-4 py-3 border-t border-gray-100 bg-white flex-shrink-0">
+            <div class="flex gap-2 items-end">
+              <textarea id="chatText" rows="1"
+                placeholder="Escribe un mensaje..."
+                class="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-colors overflow-y-auto"
+                style="max-height:7rem"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"
+                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+              <button onclick="sendChatMessage()"
+                class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 transition-all shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+              </button>
+            </div>
+            <p class="text-xs text-gray-300 mt-1.5 px-1">Enter para enviar · Shift+Enter para nueva línea</p>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /panel-conv -->
+
+  </main>
+
+  <input type="date" id="pedidosDate" class="hidden" />
+
+  <script src="/dashboard.js"></script>
+
+  <!-- ── UI overrides (after dashboard.js) ── -->
+  <script>
+    const NAV_ACTIVE   = 'nav-btn w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[10px] text-[13px] font-semibold bg-[#111827] text-white transition-all';
+    const NAV_INACTIVE = 'nav-btn w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[10px] text-[13px] font-medium text-emerald-600 hover:bg-gray-50 transition-all';
+
+    const PAGE_META = {
+      config: { title: 'Configuración del Bot', subtitle: '· Prompt, datos y FAQs' },
+      conv:   { title: 'Conversaciones',         subtitle: '· Historial y mensajes'  },
+    };
+
+    function switchTab(tab) {
+      document.getElementById('panel-config').classList.toggle('hidden', tab !== 'config');
+      document.getElementById('panel-conv').classList.toggle('hidden', tab !== 'conv');
+      document.getElementById('nav-config').className = tab === 'config' ? NAV_ACTIVE : NAV_INACTIVE;
+      document.getElementById('nav-conv').className   = tab === 'conv'   ? NAV_ACTIVE : NAV_INACTIVE;
+      const meta = PAGE_META[tab] || {};
+      document.getElementById('pageTitle').textContent    = meta.title    || '';
+      document.getElementById('pageSubtitle').textContent = meta.subtitle || '';
+      if (tab === 'conv') loadConversaciones();
+    }
+
+    // Patch showToast for rounded-xl style
+    function showToast(msg, type = 'success') {
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.textContent = msg;
+      toastMsg.className = `px-4 py-3 rounded-xl shadow-xl text-sm text-white font-medium min-w-48 ${
+        type === 'error' ? 'bg-red-600' : 'bg-emerald-600'
+      }`;
+      document.getElementById('toast').classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => document.getElementById('toast').classList.add('hidden'), 3000);
+    }
+
+    // FAQ cards — question bold dark, answer emerald, no left icon
+    function faqCardHtml(f, i) {
+      const idx = i ?? (window._cachedFaqs || []).findIndex(x => x.pregunta === f.pregunta);
+      return `
+        <div id="faq-card-${idx}" class="group px-5 py-4 bg-white border border-gray-200 rounded-xl hover:border-emerald-300 hover:shadow-sm transition-all">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="text-[13px] font-semibold text-gray-900 leading-snug">${escHtml(f.pregunta)}</p>
+              <p class="text-[12px] text-emerald-600 mt-[5px] leading-relaxed">${escHtml(f.respuesta)}</p>
+            </div>
+            <div class="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
+              <button onclick="startEditFaq(${idx})"
+                class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors" title="Editar">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button onclick="deleteFaqByIdx(${idx})"
+                class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors" title="Eliminar">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Better chat bubbles with animation
+    function chatBubble(entry) {
+      const accion  = (entry.accion || '').toUpperCase();
+      const time    = entry.fecha ? new Date(entry.fecha).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : '';
+      const dateStr = entry.fecha ? new Date(entry.fecha).toLocaleDateString('es-DO', { day: '2-digit', month: 'short' }) : '';
+
+      if (accion === 'MSG_RECIBIDO') {
+        return `<div class="flex justify-start msg-bubble">
+          <div class="max-w-xs lg:max-w-md bg-white rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 px-4 py-2.5 text-sm text-gray-800">
+            <p class="whitespace-pre-wrap break-words leading-relaxed">${escHtml(entry.detalle)}</p>
+            <p class="text-right text-xs text-gray-400 mt-1.5">${dateStr} ${time}</p>
+          </div>
+        </div>`;
+      }
+
+      if (accion === 'MSG_ENVIADO' || accion === 'MSG_MANUAL_ENVIADO' || accion === 'SEGUIMIENTO') {
+        const label = accion === 'MSG_MANUAL_ENVIADO' ? '👤 Manual' : '🤖 Bot';
+        return `<div class="flex justify-end msg-bubble">
+          <div class="max-w-xs lg:max-w-md bg-emerald-600 rounded-2xl rounded-tr-sm shadow-sm px-4 py-2.5 text-sm text-white">
+            <p class="whitespace-pre-wrap break-words leading-relaxed">${escHtml(entry.detalle)}</p>
+            <p class="text-right text-xs text-emerald-200 mt-1.5">${label} · ${dateStr} ${time}</p>
+          </div>
+        </div>`;
+      }
+
+      return `<div class="flex justify-center msg-bubble">
+        <div class="bg-white border border-gray-200 text-gray-500 text-xs rounded-full px-3 py-1 shadow-sm text-center max-w-xs">
+          <span class="font-medium">${escHtml(entry.accion)}</span> · ${escHtml(entry.detalle.slice(0, 60))}${entry.detalle.length > 60 ? '…' : ''} · ${dateStr} ${time}
+        </div>
+      </div>`;
+    }
+
+    // Patch loadConversaciones to update the sidebar badge
+    const _origLoad = loadConversaciones;
+    async function loadConversaciones() {
+      await _origLoad();
+      // Count items rendered in convList to update badge
+      const items = document.querySelectorAll('#convList button[onclick^="openChat"]');
+      const badge = document.getElementById('convBadge');
+      if (items.length > 0) {
+        badge.textContent = items.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    // Patch waStatus: keep it compact for sidebar
+    const _origRefreshWa = refreshWaStatus;
+    async function refreshWaStatus() {
+      const res = await apiFetch('/status');
+      if (!res) return;
+      const { connected } = await res.json();
+      const el = document.getElementById('waStatus');
+      if (connected) {
+        el.innerHTML = `<span class="w-[7px] h-[7px] rounded-full bg-emerald-500 flex-shrink-0"></span><span>Bot operando · v2.4</span>`;
+        el.className = 'flex items-center gap-[6px] text-[12px] font-semibold text-emerald-600 border border-emerald-200 bg-emerald-50 px-3 py-[5px] rounded-full';
+      } else {
+        el.innerHTML = `<span class="w-[7px] h-[7px] rounded-full bg-red-400 blink flex-shrink-0"></span><a href="/qr" target="_blank" class="underline">Conectar WhatsApp</a>`;
+        el.className = 'flex items-center gap-[6px] text-[12px] font-semibold text-red-500 border border-red-200 bg-red-50 px-3 py-[5px] rounded-full';
+      }
+    }
+
+    // Init
+    switchTab('config');
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const main    = document.getElementById('mainContent');
+      const collapsed = sidebar.classList.toggle('collapsed');
+      main.style.marginLeft = collapsed ? '56px' : '240px';
+    }
+  </script>
+</body>
+</html>

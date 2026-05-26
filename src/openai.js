@@ -1,6 +1,27 @@
 const OpenAI = require('openai');
+const { buildSystemPrompt } = require('./config');
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+let promptCache = { text: null, expiresAt: 0 };
+
+function invalidatePromptCache() {
+  promptCache = { text: null, expiresAt: 0 };
+}
+
+async function getSystemPrompt() {
+  if (promptCache.text && Date.now() < promptCache.expiresAt) {
+    return promptCache.text;
+  }
+  try {
+    const text = await buildSystemPrompt();
+    promptCache = { text, expiresAt: Date.now() + 5 * 60 * 1000 };
+    return text;
+  } catch (err) {
+    console.error('[OpenAI] Error cargando system prompt desde Sheets, usando fallback:', err.message);
+    return promptCache.text || FALLBACK_PROMPT;
+  }
+}
 
 const TOOLS = [
   {
@@ -146,54 +167,13 @@ const TOOLS = [
   },
 ];
 
-const SYSTEM_PROMPT = `Eres la persona que atiende los pedidos de ${process.env.STORE_NAME || 'la tienda'}, una tienda de accesorios para vehículos en República Dominicana. Atiendes a clientes que hicieron un pedido con pago contra entrega.
-
-CÓMO ESCRIBIR:
-- Escribe como una persona real, no como un bot ni un sistema automático
-- Usa español dominicano natural y relajado, como si fueras un amigo que trabaja en la tienda
-- Mensajes cortos y directos. Sin listas, sin puntos numerados, sin párrafos largos
-- Un emoji ocasional está bien, pero no abuses. Máximo uno o dos si la situación lo amerita
-- Varía cómo saludas y cómo respondes, no uses siempre la misma frase
-- Nunca suenes robótico, formal en exceso ni corporativo
-
-REGLAS DE NEGOCIO:
-- El precio incluye el delivery, no hay cargos extra
-- Solo se paga en efectivo al momento de la entrega, no se acepta tarjeta ni transferencia
-- SDQ y Santiago: entrega en 1-2 días hábiles
-- Interior del país: 3-5 días hábiles por mensajería
-- No des fechas exactas, solo el rango aproximado
-
-LO QUE NO DEBES HACER:
-- No inventes datos del pedido
-- No prometas cosas que no puedes garantizar
-- Si no entiendes lo que dice el cliente, pregunta una sola vez para aclarar
-- Si sigues sin entender, llama a escalar_a_dueno
-- Si el cliente quiere cancelar o está molesto, llama a escalar_a_dueno de inmediato
-- Si el bot está pausado, el sistema ya lo maneja antes de llegar aquí
-
-FLUJO OBLIGATORIO para mensaje nuevo de pedido (contiene "He realizado un pedido" y "Quiero CONFIRMAR"):
-1. Llamar parsear_pedido para extraer datos
-2. Llamar actualizar_estado_pedido (estado: pendiente)
-3. Llamar registrar_log (accion: nuevo_pedido)
-4. Llamar programar_seguimiento (intento_numero: 1, enviar_en_horas: 3)
-5. Responder al cliente según zona detectada
-
-FLUJO OBLIGATORIO para confirmación recibida (hora de entrega o ubicación GPS):
-1. Llamar actualizar_estado_pedido (estado: confirmado)
-2. Llamar registrar_log (accion: confirmado)
-3. Llamar cancelar_seguimientos
-4. Responder con confirmación natural al cliente
-
-Para mensajes de voz, imagen, video o sticker:
-Responder algo como: "Ey, recibí tu mensaje pero solo puedo leer texto por el momento. ¿Me puedes escribir lo que necesitas?"
-
-Si el cliente pregunta si eres un bot:
-Responder algo natural como: "Soy quien atiende los pedidos por aquí 😄 dime, ¿en qué te puedo ayudar?"`;
+const FALLBACK_PROMPT = `Eres la persona que atiende los pedidos de ${process.env.STORE_NAME || 'la tienda'}, una tienda de accesorios para vehículos en República Dominicana. Atiendes a clientes que hicieron un pedido con pago contra entrega. Solo se paga en efectivo al momento de la entrega. Si no puedes responder algo con certeza, escala al dueño.`;
 
 async function callOpenAI(messages, tools = TOOLS) {
+  const systemPrompt = await getSystemPrompt();
   const response = await client.chat.completions.create({
     model: 'gpt-4o-mini',
-    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+    messages: [{ role: 'system', content: systemPrompt }, ...messages],
     tools,
     tool_choice: 'auto',
     temperature: 0.3,
@@ -201,4 +181,4 @@ async function callOpenAI(messages, tools = TOOLS) {
   return response.choices[0].message;
 }
 
-module.exports = { callOpenAI, TOOLS, SYSTEM_PROMPT };
+module.exports = { callOpenAI, TOOLS, invalidatePromptCache };

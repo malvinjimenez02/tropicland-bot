@@ -11,6 +11,7 @@ const path = require('path');
 let sock = null;
 let messageHandler = null;
 let currentQR = null;
+let isConnected = false;
 
 // Convierte número de teléfono a JID de WhatsApp
 function toJid(numero) {
@@ -54,6 +55,7 @@ async function connectToWhatsApp(onMessage) {
     }
 
     if (connection === 'close') {
+      isConnected = false;
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
 
@@ -67,6 +69,7 @@ async function connectToWhatsApp(onMessage) {
         console.error('[Baileys] Sesión cerrada (logout). Elimina la carpeta auth_state y reinicia.');
       }
     } else if (connection === 'open') {
+      isConnected = true;
       currentQR = null;
       console.log('[Baileys] ✅ Conectado a WhatsApp exitosamente');
     }
@@ -138,16 +141,23 @@ function extractContent(msg) {
 }
 
 async function sendTextMessage(to, text) {
-  if (!sock) throw new Error('[Baileys] Socket no inicializado. Llama connectToWhatsApp primero.');
+  if (!sock || !isConnected) {
+    throw new Error('Bot desconectado de WhatsApp. Escanea el QR en /qr o espera reconexión.');
+  }
 
   const jid = toJid(to);
+  console.log(`[Baileys] Enviando a JID: ${jid}`);
   try {
     await sock.sendMessage(jid, { text });
-    console.log(`[Baileys] Mensaje enviado a ${to}: ${text.substring(0, 60)}...`);
+    console.log(`[Baileys] ✓ Enviado a ${jid}: ${text.substring(0, 60)}`);
   } catch (err) {
-    console.error(`[Baileys] Error enviando mensaje a ${to}:`, err.message);
+    console.error(`[Baileys] Error enviando a ${jid}:`, err.message);
     throw err;
   }
+}
+
+function getConnectionState() {
+  return { connected: isConnected, hasSocket: !!sock };
 }
 
 function getSocket() {
@@ -158,4 +168,4 @@ function getCurrentQR() {
   return currentQR;
 }
 
-module.exports = { connectToWhatsApp, sendTextMessage, toJid, fromJid, getSocket, getCurrentQR };
+module.exports = { connectToWhatsApp, sendTextMessage, toJid, fromJid, getSocket, getCurrentQR, getConnectionState };

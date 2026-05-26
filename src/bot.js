@@ -1,7 +1,7 @@
 const { callOpenAI } = require('./openai');
 const { executeTool, getPedidoRef } = require('./tools');
 const { sendTextMessage } = require('./whatsapp');
-const { isBotPausado, actualizarConversacion } = require('./sheets');
+const { isBotPausado, actualizarConversacion, registrarLog, buscarConversacion } = require('./sheets');
 
 // Historial en memoria por número de WhatsApp (se pierde al reiniciar)
 // Para persistencia real, leer de Sheets en cada mensaje
@@ -39,8 +39,17 @@ async function processIncomingMessage(numero_whatsapp, content) {
     const userMessage = buildUserContent(content);
     addToHistory(numero_whatsapp, 'user', userMessage);
 
-    // Guardar último mensaje recibido en Sheets
+    // Guardar último mensaje recibido y loguear en historial
+    const conv = await buscarConversacion(numero_whatsapp);
+    const nombreCliente = conv?.data?.[1] || numero_whatsapp;
     await actualizarConversacion(numero_whatsapp, { ultimo_recibido: userMessage });
+    await registrarLog({
+      numero_whatsapp,
+      nombre_cliente: nombreCliente,
+      accion: 'MSG_RECIBIDO',
+      detalle: userMessage,
+      estado_resultante: '',
+    });
 
     let messages = getHistory(numero_whatsapp);
     let response = await callOpenAI(messages);
@@ -88,6 +97,13 @@ async function processIncomingMessage(numero_whatsapp, content) {
       addToHistory(numero_whatsapp, 'assistant', assistantText);
       await sendTextMessage(numero_whatsapp, assistantText);
       await actualizarConversacion(numero_whatsapp, { ultimo_enviado: assistantText });
+      await registrarLog({
+        numero_whatsapp,
+        nombre_cliente: nombreCliente,
+        accion: 'MSG_ENVIADO',
+        detalle: assistantText,
+        estado_resultante: '',
+      });
     }
   } catch (err) {
     console.error(`Error procesando mensaje de ${numero_whatsapp}:`, err);

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TropiclandBot — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div class="w-full max-w-sm mx-4">
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+
+      <div class="text-center mb-8">
+        <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-md select-none">🤖</div>
+        <h1 class="text-xl font-bold text-gray-900">TropiclandBot</h1>
+        <p class="text-sm text-gray-400 mt-1">Panel de Administración</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5">Contraseña</label>
+          <input id="password" type="password"
+            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-colors"
+            placeholder="••••••••" autofocus />
+        </div>
+
+        <div id="errorMsg" class="hidden mb-4 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5"></div>
+
+        <button type="submit" id="submitBtn"
+          class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-sm font-semibold py-2.5 rounded-xl transition-all shadow-sm">
+          Entrar
+        </button>
+      </form>
+    </div>
+    <p class="text-center text-xs text-gray-300 mt-4">TropiclandBot v2.0 · E-commerce RD</p>
+  </div>
+
+  <script>
+    (async () => {
+      const token = localStorage.getItem('dashboard_token');
+      if (token) {
+        const res = await fetch('/api/dashboard/verify', { headers: { 'x-dashboard-token': token } });
+        if (res.ok) window.location.href = '/dashboard.html';
+      }
+    })();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('submitBtn');
+      const errMsg   = document.getElementById('errorMsg');
+
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+      errMsg.classList.add('hidden');
+
+      try {
+        const res  = await fetch('/api/dashboard/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('dashboard_token', data.token);
+          window.location.href = '/dashboard.html';
+        } else {
+          errMsg.textContent = data.error || 'Contraseña incorrecta';
+          errMsg.classList.remove('hidden');
+        }
+      } catch {
+        errMsg.textContent = 'Error de conexión con el servidor';
+        errMsg.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>

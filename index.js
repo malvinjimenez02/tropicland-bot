@@ -1,13 +1,17 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const QRCode = require('qrcode');
 const { connectToWhatsApp, getCurrentQR } = require('./src/whatsapp');
 const { processIncomingMessage } = require('./src/bot');
 const { startCronJobs, procesarSeguimientos, enviarResumenDiario } = require('./src/cron');
 const { setupSheets } = require('./src/sheets');
+const dashboardRouter = require('./src/api');
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/dashboard', dashboardRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -72,7 +76,18 @@ async function main() {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Servidor HTTP corriendo en puerto ${PORT}`);
+    console.log(`Dashboard disponible en http://localhost:${PORT}/`);
   });
+
+  // Crear hojas faltantes (incluye Config) e inicializar con defaults
+  try {
+    await setupSheets();
+    const { initConfigSheet } = require('./src/config');
+    await initConfigSheet();
+    console.log('[Config] Hoja Config lista.');
+  } catch (err) {
+    console.error('[Config] Error inicializando hoja Config (continúa de todos modos):', err.message);
+  }
 
   console.log('Iniciando TropiclandBot con Baileys...');
 
