@@ -218,9 +218,28 @@ async function loadConversaciones() {
   const list = document.getElementById('convList');
   list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8 px-4">Cargando...</p>';
 
-  const res = await apiFetch('/conversaciones');
+  let res;
+  try {
+    res = await apiFetch('/conversaciones');
+  } catch (e) {
+    list.innerHTML = `<p class="text-xs text-red-500 text-center py-8 px-4">Error de red: ${escHtml(e.message)}</p>`;
+    return;
+  }
   if (!res) return;
-  const data = await res.json();
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    list.innerHTML = `<p class="text-xs text-red-500 text-center py-8 px-4">Error ${res.status}: ${escHtml(errText.slice(0, 120))}</p>`;
+    return;
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    list.innerHTML = `<p class="text-xs text-red-500 text-center py-8 px-4">Respuesta inválida del servidor</p>`;
+    return;
+  }
 
   if (!data.length) {
     list.innerHTML = '<p class="text-sm text-gray-400 text-center py-8 px-4">No hay conversaciones registradas.</p>';
