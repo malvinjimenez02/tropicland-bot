@@ -481,9 +481,8 @@
 
     // Patch loadConversaciones to update the sidebar badge
     const _origLoad = loadConversaciones;
-    async function loadConversaciones() {
+    loadConversaciones = async function() {
       await _origLoad();
-      // Count items rendered in convList to update badge
       const items = document.querySelectorAll('#convList button[onclick^="openChat"]');
       const badge = document.getElementById('convBadge');
       if (items.length > 0) {
@@ -492,11 +491,11 @@
       } else {
         badge.classList.add('hidden');
       }
-    }
+    };
 
     // Patch waStatus: keep it compact for sidebar
     const _origRefreshWa = refreshWaStatus;
-    async function refreshWaStatus() {
+    refreshWaStatus = async function() {
       const res = await apiFetch('/status');
       if (!res) return;
       const { connected } = await res.json();
