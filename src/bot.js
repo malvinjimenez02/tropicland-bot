@@ -29,17 +29,9 @@ function buildUserContent(content) {
 
 async function processIncomingMessage(numero_whatsapp, content) {
   try {
-    // Verificar si el bot está pausado para este número
-    const pausado = await isBotPausado(numero_whatsapp);
-    if (pausado) {
-      console.log(`Bot pausado para ${numero_whatsapp}. Ignorando mensaje.`);
-      return;
-    }
-
     const userMessage = buildUserContent(content);
-    addToHistory(numero_whatsapp, 'user', userMessage);
 
-    // Guardar último mensaje recibido y loguear en historial
+    // Guardar último mensaje recibido y loguear (siempre, incluso si el bot está pausado)
     const conv = await buscarConversacion(numero_whatsapp);
     const nombreCliente = conv?.data?.[1] || numero_whatsapp;
     await actualizarConversacion(numero_whatsapp, { ultimo_recibido: userMessage });
@@ -50,6 +42,15 @@ async function processIncomingMessage(numero_whatsapp, content) {
       detalle: userMessage,
       estado_resultante: '',
     });
+
+    // Verificar si el bot está pausado — después de logear para que aparezca en el dashboard
+    const pausado = await isBotPausado(numero_whatsapp);
+    if (pausado) {
+      console.log(`Bot pausado para ${numero_whatsapp}. Mensaje logueado pero sin respuesta automática.`);
+      return;
+    }
+
+    addToHistory(numero_whatsapp, 'user', userMessage);
 
     let messages = getHistory(numero_whatsapp);
     let response = await callOpenAI(messages);
