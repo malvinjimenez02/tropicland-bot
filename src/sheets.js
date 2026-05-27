@@ -92,7 +92,7 @@ async function appendRow(sheetName, values) {
 async function updateCell(sheetName, rowIndex, colIndex, value) {
   const sheets = await getSheetsClient();
   const col = String.fromCharCode(65 + colIndex);
-  const row = rowIndex + 2; // +1 header, +1 base 0→1
+  const row = rowIndex + 1; // rowIndex is 1-based (loop starts at i=1 skipping header)
   return withRetry(() =>
     sheets.spreadsheets.values.update({
       spreadsheetId: SHEET_ID,
