@@ -160,6 +160,12 @@ router.post('/bot/pausar', requireAuth, async (req, res) => {
     if (!numero_whatsapp) {
       return res.status(400).json({ error: 'Campo "numero_whatsapp" requerido' });
     }
+    const { buscarConversacion } = require('./sheets');
+    const conv = await buscarConversacion(numero_whatsapp);
+    if (!conv) {
+      console.warn(`[Dashboard] pausarBot: no se encontró conversación para ${numero_whatsapp}`);
+      return res.status(404).json({ error: `No se encontró conversación para ${numero_whatsapp}` });
+    }
     await pausarBot(numero_whatsapp);
     res.json({ ok: true });
   } catch (err) {
@@ -173,6 +179,12 @@ router.post('/bot/activar', requireAuth, async (req, res) => {
     const { numero_whatsapp } = req.body || {};
     if (!numero_whatsapp) {
       return res.status(400).json({ error: 'Campo "numero_whatsapp" requerido' });
+    }
+    const { buscarConversacion } = require('./sheets');
+    const conv = await buscarConversacion(numero_whatsapp);
+    if (!conv) {
+      console.warn(`[Dashboard] activarBot: no se encontró conversación para ${numero_whatsapp}`);
+      return res.status(404).json({ error: `No se encontró conversación para ${numero_whatsapp}` });
     }
     await activarBot(numero_whatsapp);
     res.json({ ok: true });

@@ -207,9 +207,9 @@ async function deleteFaq(pregunta) {
 
 // ---- Conversaciones ----
 const BOT_STATE_LABELS = {
-  activo: { text: 'Activo', cls: 'bg-emerald-100 text-emerald-700' },
-  pausado: { text: 'Pausado', cls: 'bg-red-100 text-red-700' },
-  escalado: { text: 'Escalado', cls: 'bg-yellow-100 text-yellow-700' },
+  activo:   { text: 'Bot activo',  cls: 'bg-emerald-100 text-emerald-700' },
+  pausado:  { text: 'Bot pausado', cls: 'bg-red-100 text-red-700' },
+  escalado: { text: 'Escalado',    cls: 'bg-yellow-100 text-yellow-700' },
 };
 
 let _activeChat = null; // { telefono, nombre }
@@ -386,12 +386,12 @@ async function toggleBot(numero, pausar) {
   if (res.ok) {
     showToast(pausar ? 'Bot pausado para este número' : 'Bot activado para este número');
     await loadConversaciones();
-    // Re-open chat to refresh header actions
     if (_activeChat && _activeChat.telefono === numero) {
       openChat(numero);
     }
   } else {
-    showToast('Error al cambiar estado del bot', 'error');
+    const err = await res.json().catch(() => ({}));
+    showToast(err.error || 'Error al cambiar estado del bot', 'error');
   }
 }
 
